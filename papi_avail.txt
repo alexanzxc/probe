@@ -1,0 +1,86 @@
+Available PAPI preset and user defined events plus hardware information.
+--------------------------------------------------------------------------------
+PAPI version             : 7.0.1.0
+Operating system         : Linux 6.6.7-arch1-1
+Vendor string and code   : GenuineIntel (1, 0x1)
+Model string and code    : Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz (142, 0x8e)
+CPU revision             : 9.000000
+CPUID                    : Family/Model/Stepping 6/142/9, 0x06/0x8e/0x09
+CPU Max MHz              : 3100
+CPU Min MHz              : 400
+Total cores              : 4
+SMT threads per core     : 2
+Cores per socket         : 2
+Sockets                  : 1
+Cores per NUMA region    : 4
+NUMA regions             : 1
+Running in a VM          : no
+Number Hardware Counters : 11
+Max Multiplex Counters   : 384
+Fast counter read (rdpmc): yes
+--------------------------------------------------------------------------------
+
+================================================================================
+  PAPI Preset Events
+================================================================================
+    Name        Code    Avail Deriv Description (Note)
+PAPI_L1_DCM  0x80000000  Yes   No   Level 1 data cache misses
+PAPI_L1_ICM  0x80000001  Yes   No   Level 1 instruction cache misses
+PAPI_L2_DCM  0x80000002  Yes   Yes  Level 2 data cache misses
+PAPI_L2_ICM  0x80000003  Yes   No   Level 2 instruction cache misses
+PAPI_L3_DCM  0x80000004  No    No   Level 3 data cache misses
+PAPI_L3_ICM  0x80000005  No    No   Level 3 instruction cache misses
+PAPI_L1_TCM  0x80000006  Yes   Yes  Level 1 cache misses
+PAPI_L2_TCM  0x80000007  Yes   No   Level 2 cache misses
+PAPI_L3_TCM  0x80000008  Yes   No   Level 3 cache misses
+PAPI_L3_LDM  0x8000000e  Yes   No   Level 3 load misses
+PAPI_L3_STM  0x8000000f  No    No   Level 3 store misses
+PAPI_TLB_DM  0x80000014  Yes   Yes  Data translation lookaside buffer misses
+PAPI_TLB_IM  0x80000015  Yes   No   Instruction translation lookaside buffer misses
+PAPI_TLB_TL  0x80000016  No    No   Total translation lookaside buffer misses
+PAPI_L1_LDM  0x80000017  Yes   No   Level 1 load misses
+PAPI_L1_STM  0x80000018  Yes   No   Level 1 store misses
+PAPI_L2_LDM  0x80000019  Yes   No   Level 2 load misses
+PAPI_L2_STM  0x8000001a  Yes   No   Level 2 store misses
+PAPI_BTAC_M  0x8000001b  No    No   Branch target address cache misses
+PAPI_PRF_DM  0x8000001c  Yes   No   Data prefetch cache misses
+PAPI_L3_DCH  0x8000001d  No    No   Level 3 data cache hits
+PAPI_TLB_SD  0x8000001e  No    No   Translation lookaside buffer shootdowns
+PAPI_L1_DCH  0x8000003e  No    No   Level 1 data cache hits
+PAPI_L2_DCH  0x8000003f  No    No   Level 2 data cache hits
+PAPI_L1_DCA  0x80000040  No    No   Level 1 data cache accesses
+PAPI_L2_DCA  0x80000041  Yes   No   Level 2 data cache accesses
+PAPI_L3_DCA  0x80000042  Yes   Yes  Level 3 data cache accesses
+PAPI_L1_DCR  0x80000043  No    No   Level 1 data cache reads
+PAPI_L2_DCR  0x80000044  Yes   No   Level 2 data cache reads
+PAPI_L3_DCR  0x80000045  Yes   No   Level 3 data cache reads
+PAPI_L1_DCW  0x80000046  No    No   Level 1 data cache writes
+PAPI_L2_DCW  0x80000047  Yes   Yes  Level 2 data cache writes
+PAPI_L3_DCW  0x80000048  Yes   No   Level 3 data cache writes
+PAPI_L1_ICH  0x80000049  No    No   Level 1 instruction cache hits
+PAPI_L2_ICH  0x8000004a  Yes   No   Level 2 instruction cache hits
+PAPI_L3_ICH  0x8000004b  No    No   Level 3 instruction cache hits
+PAPI_L1_ICA  0x8000004c  No    No   Level 1 instruction cache accesses
+PAPI_L2_ICA  0x8000004d  Yes   No   Level 2 instruction cache accesses
+PAPI_L3_ICA  0x8000004e  Yes   No   Level 3 instruction cache accesses
+PAPI_L1_ICR  0x8000004f  No    No   Level 1 instruction cache reads
+PAPI_L2_ICR  0x80000050  Yes   No   Level 2 instruction cache reads
+PAPI_L3_ICR  0x80000051  Yes   No   Level 3 instruction cache reads
+PAPI_L1_ICW  0x80000052  No    No   Level 1 instruction cache writes
+PAPI_L2_ICW  0x80000053  No    No   Level 2 instruction cache writes
+PAPI_L3_ICW  0x80000054  No    No   Level 3 instruction cache writes
+PAPI_L1_TCH  0x80000055  No    No   Level 1 total cache hits
+PAPI_L2_TCH  0x80000056  No    No   Level 2 total cache hits
+PAPI_L3_TCH  0x80000057  No    No   Level 3 total cache hits
+PAPI_L1_TCA  0x80000058  No    No   Level 1 total cache accesses
+PAPI_L2_TCA  0x80000059  Yes   Yes  Level 2 total cache accesses
+PAPI_L3_TCA  0x8000005a  Yes   No   Level 3 total cache accesses
+PAPI_L1_TCR  0x8000005b  No    No   Level 1 total cache reads
+PAPI_L2_TCR  0x8000005c  Yes   Yes  Level 2 total cache reads
+PAPI_L3_TCR  0x8000005d  Yes   Yes  Level 3 total cache reads
+PAPI_L1_TCW  0x8000005e  No    No   Level 1 total cache writes
+PAPI_L2_TCW  0x8000005f  Yes   Yes  Level 2 total cache writes
+PAPI_L3_TCW  0x80000060  Yes   No   Level 3 total cache writes
+--------------------------------------------------------------------------------
+Of 108 possible events, 59 are available, of which 18 are derived.
+

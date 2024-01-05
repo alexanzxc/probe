@@ -4,9 +4,9 @@
 #include <getopt.h>
 #include <iostream>
 #include <string>
+
 #include <papi.h>
 #include <assert.h>
-#include <inttypes.h>
 
 #define PAGE_SIZE 4096
 #define LINE_SIZE 64
@@ -26,8 +26,8 @@ static inline uint64_t rdtsc()
 
 int retval;
 int EventSet;
-char* EventName1[] = {"DTLB_LOAD_MISSES:WALK_DURATION", "PAPI_TLB_DM", "PAPI_L1_DCM"};
-char *EventName2[] = {"PERF_COUNT_HW_CACHE_DTLB:READ", "PERF_COUNT_HW_CACHE_DTLB:ACCESS", "LLC_MISSES", "DTLB_LOAD_MISSES:MISS_CAUSES_A_WALK"};
+char* EventName1[] = {"DTLB_LOAD_MISSES:WALK_DURATION", "L1D:REPLACEMENT", "PAPI_L1_DCM"};
+char *EventName2[] = {"L2_LINES_IN:ANY", "LLC_REFERENCES", "LLC_MISSES", "DTLB_LOAD_MISSES:MISS_CAUSES_A_WALK"};
 char **EventName;
 int NumEvent;
 long_long global_values[4];
@@ -111,9 +111,10 @@ int main(int argc, char *argv[])
 	uint64_t numAccesses = 1;
 	uint64_t pageStride = 1;
 	uint64_t accessOffset = 1;
+	uint64_t accessOffsetRandom = 0;
 
 	int c;
-	while ((c = getopt(argc, argv, ":p:a:s:o:")) != EOF)
+	while ((c = getopt(argc, argv, ":p:a:s:o:r:")) != EOF)
 	{
 		switch (c)
 		{
@@ -129,6 +130,9 @@ int main(int argc, char *argv[])
 		case 'o':
 			accessOffset = atoi(optarg);
 			break;
+		case 'r':
+			accessOffsetRandom = atoi(optarg);
+			break;
 		case ':':
 			printf("Missing option.\n");
 			exit(1);
@@ -139,31 +143,35 @@ int main(int argc, char *argv[])
 	printf("numPages: %lu\n", numPages);
 	printf("numAccesses: %lu\n", numAccesses);
 	printf("pageStride: %lu\n", pageStride);
-	printf("accessOffset: %lu\n", accessOffset);
+	if (accessOffsetRandom)
+	{
+		printf("accessOffsetRandom: on\n");
+	}
+	else
+	{
+		printf("accessOffset: %lu\n", accessOffset);
+	}
 
 	// Create array of pointers to the allocated pages
 	uintptr_t **pages = new uintptr_t *[numPages];
-    //buffer alloc
 	char *buf = new char[numPages * PAGE_SIZE];
-	if (buf == NULL)
+	char *buf1 = new char[numPages * PAGE_SIZE];
+	if ((buf == NULL) || (buf1 == NULL))
 	{
 		printf("could not allocate memory..\n");
 		exit(1);
 	}
-    //buffer split according to stride
 	for (uint64_t i = 0; i < (numPages * PAGE_SIZE); i += (PAGE_SIZE * pageStride))
-	{   
-        //printf("i is %ld, and its size is %zu\n",i, sizeof(i));
+	{
 		buf[i] = i;
 	}
 	printf("buf: %p\n", buf);
 	printf("size: 0x%lx\n", numPages * PAGE_SIZE);
-	
 
 	for (uint64_t i = 0; i < numPages; i++)
 	{
 		pages[i] = (uintptr_t *)(buf + i * pageStride * PAGE_SIZE);
-		//printf("pages[%lu] = %p\n",i,pages[i]);
+		printf("pages[%lu] = %p\n",i,pages[i]);
 	}
 
 	// Cache line size is considered in units of pointer size
@@ -173,28 +181,30 @@ int main(int argc, char *argv[])
 	for (uint64_t i = 0; i < numOffsets; i++)
 	{
 		offsets[i] = i * LINE_SIZE;
-		//printf("offset_size[%lu] = 0x%lx\n", i, offsets[i]);
+		printf("offset_size[%lu] = 0x%lx\n", i, offsets[i]);
 	}
 
 	// Create the pointer walk from pointers and offsets
 	uintptr_t *start = pages[0];
-	start += accessOffset;
+	if (accessOffsetRandom)
+		start += offsets[0];
+	else
+		start += accessOffset;
 
 	uintptr_t **ptr = (uintptr_t **)start;
 	for (uint64_t i = 0; i < numAccesses; i++)
 	{
 		// uintptr_t *next = pages[i % numPages];
 		// next = ptr[i];
-		pages[i] += accessOffset;
-		//printf("pages[%ld] value is %"PRIxPTR" \n",i,pages[i]);
+		if (accessOffsetRandom)
+			pages[i] += offsets[i % numOffsets];
+		else
+			pages[i] += accessOffset;
 		//why commented out? pages will overflow
-		uintptr_t *next = pages[i % numPages];
-		//printf("next value is %"PRIxPTR"\n",pages[i % numPages]);
-		// uintptr_t *next = pages[i];
+		// uintptr_t *next = pages[i % numPages];
+		uintptr_t *next = pages[i];
 		(*ptr) = next;
-		//printf("ptr value is %"PRIxPTR"\n",ptr);
 		ptr = (uintptr_t **)next;
-		//printf("ptr value is %"PRIxPTR"\n",ptr);
 	}
 
 	/*
@@ -233,6 +243,8 @@ int main(int argc, char *argv[])
 	}
 	printf("\nbenchmark finishes...\n\n");
 
+	/*
 	printf("total_cycles: %lli\n", stop_time - start_time);
 	printf("avg_access_time: %lli\n", (stop_time - start_time)/(3*loopCount));
+	*/
 }
