@@ -14,9 +14,10 @@
 #define HUGE_PAGE_SIZE 2097152
 #define NUM_ACCESSES 1000000
 #define BASE ((void *)0x13370000000L)
-
 #define TLLINE(x) ((x) >> 21)
 #define TLLINE2(x) ((x) >> 12)
+
+//TODO: dynamic number of pages and number of accesses, figure out pattern for L2 miss.
 
 static inline uintptr_t TDL1(uintptr_t va) {
     return TLLINE(va) & 0x0f;
