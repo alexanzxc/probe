@@ -12,7 +12,6 @@
 
 #define PAGE_SIZE 4096
 #define HUGE_PAGE_SIZE 2097152
-#define NUM_ACCESSES 1000000
 #define BASE ((void *)0x13370000000L)
 #define TLLINE(x) ((x) >> 21)
 #define TLLINE2(x) ((x) >> 12)
@@ -50,12 +49,12 @@ static void *setup_default()
 {
     void *mapped_address;
 
-    mapped_address = mmap(BASE, (5*PAGE_SIZE), PROT_READ|PROT_WRITE, MAP_FIXED|MAP_PRIVATE|MAP_ANONYMOUS|MAP_POPULATE, -1, 0);
+    mapped_address = mmap(BASE, (65*PAGE_SIZE), PROT_READ|PROT_WRITE, MAP_FIXED|MAP_PRIVATE|MAP_ANONYMOUS|MAP_POPULATE, -1, 0);
 
     // Print the mapped address and size
     if (mapped_address != MAP_FAILED) {
-        printf("Mapped address: %p\n", mapped_address);
-        printf("Size: %ld bytes\n", (long) (5*PAGE_SIZE));
+        // printf("Mapped address: %p\n", mapped_address);
+        // printf("Size: %ld bytes\n", (long) (5*PAGE_SIZE));
     } else {
         perror("Failed to mmap"); // Print why the mapping failed
     }
@@ -67,12 +66,12 @@ static void *setup_huge()
 {
     void *mapped_address;
 
-    mapped_address = mmap((BASE+HUGE_PAGE_SIZE), (5*HUGE_PAGE_SIZE), PROT_READ|PROT_WRITE, MAP_FIXED|MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB|MAP_HUGE_2MB|MAP_POPULATE, -1, 0);
+    mapped_address = mmap(BASE, (33*HUGE_PAGE_SIZE), PROT_READ|PROT_WRITE, MAP_FIXED|MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB|MAP_HUGE_2MB|MAP_POPULATE, -1, 0);
 
     // Print the mapped address and size
     if (mapped_address != MAP_FAILED) {
-        printf("Mapped address: %p\n", mapped_address);
-        printf("Size: %ld bytes\n", (long) (5*HUGE_PAGE_SIZE));
+        // printf("Mapped address: %p\n", mapped_address);
+        // printf("Size: %ld bytes\n", (long) (5*HUGE_PAGE_SIZE));
     } else {
         perror("Failed to mmap"); // Print why the mapping failed
     }
@@ -80,38 +79,41 @@ static void *setup_huge()
     return mapped_address;
 }
 
-void access_and_time(char *pages, size_t page_size, size_t num_pages) {
+void access_and_time(char *pages, size_t page_size, size_t num_pages,int num_accesses) {
     // uint64_t start = rdtsc();
-for(int i =0;i<NUM_ACCESSES;i++){
-    for (size_t i = 0; i < num_pages; i++) {
-        char *addr = pages + i * page_size;
-        //printf("touching address *%p\n",addr);
+for(int i =0;i<num_accesses;i++){
+    for (size_t j = 0; j < num_pages; j++) {
+        char *addr = pages + j * page_size;
         *addr = *addr + 1;
+        //printf("touched address *%p\n",(void *)addr);
+        
     }
     // uint64_t end = rdtsc();
     // return end - start;
-}
+    }
 }
 
-void measure_tlb(char *memory, size_t page_size, int num_pages, const char *label) {
-    uint64_t start_l1, end_l1;
-    uint64_t total_l1_time = 0;
+void measure_tlb(char *memory, size_t page_size, int num_pages, const char *label,int num_accesses) {
+    uint64_t start_l1, end_l1,start_l2, end_l2;
+    uint64_t total_l1_time = 0 , total_l2_time = 0;
+    char *addr_l2 = (memory+(num_pages)*page_size);
 
     // Measure access time for L1 DTLB
     start_l1 = rdtsc();
-    access_and_time(memory, page_size, num_pages);
+    access_and_time(memory, page_size, num_pages, num_accesses);
     end_l1 = rdtsc();
     total_l1_time = end_l1 - start_l1;
 
     // Measure access time for L2 DTLB
-    // start_l2 = rdtsc();
-    // access_and_time(memory, page_size, num_pages);
-    // end_l2 = rdtsc();
-    // total_l2_time = end_l2 - start_l2;
+    start_l2 = rdtsc();
+    *addr_l2 = *addr_l2 + 1;
+    end_l2 = rdtsc();
+    //printf("touched L2 %p\n",(void *)addr_l2);
+    total_l2_time = end_l2 - start_l2;
 
     printf("%s\n", label);
-    printf("Average access time for L1 DTLB: %" PRIu64 " cycles\n", total_l1_time / NUM_ACCESSES);
-    //printf("Average access time for L2 DTLB: %" PRIu64 " cycles\n", total_l2_time / NUM_ACCESSES);
+    printf("Average access time for L1 DTLB: %" PRIu64 " cycles\n", total_l1_time / (num_pages * num_accesses));
+    printf("Average access time for L2 DTLB: %" PRIu64 " cycles\n", total_l2_time );
     printf("\n");
 }
 
@@ -125,10 +127,16 @@ void pin_to_core(int core) {
         exit(1);
     }
 }
-int main() {
+int main(int argc, char *argv[]) {
     pin_to_core(0);  // Pin to the first core
     void *default_page_buffer;
     void *huge_page_buffer;
+     if (argc != 2) {
+        fprintf(stderr, "Usage: %s number of accesses\n", argv[0]);
+        return 1;
+    }
+    
+    int num_accesses = atoi(argv[1]);
 
     if ((default_page_buffer = setup_default()) == MAP_FAILED) {
 			fprintf(stderr, "###Error in mmap for default pages: %s\n", strerror(errno));
@@ -136,20 +144,18 @@ int main() {
 			return 2;
 		}
 
+    // Measure TLB access times for 4KB pages
+    measure_tlb(default_page_buffer, PAGE_SIZE, 64, "TLB Access Times for 4KB Pages",num_accesses);
+    munmap(default_page_buffer, PAGE_SIZE);
+    
     if ((huge_page_buffer = setup_huge()) == MAP_FAILED) {
 			fprintf(stderr, "###Error in mmap for huge pages: %s\n", strerror(errno));
 			perror("Error setting up huge page buffer");
 			return 2;
 		}    
 
-    // Measure TLB access times for 4KB pages
-    measure_tlb(default_page_buffer, PAGE_SIZE, 4, "TLB L1 Access Times for 4KB Pages");
-
     // Measure TLB access times for 2MB pages
-    measure_tlb(huge_page_buffer, HUGE_PAGE_SIZE, 4, "TLB L1 Access Times for 2MB Pages");
-
-    // Free allocated memory
-    munmap(default_page_buffer, PAGE_SIZE);
+    measure_tlb(huge_page_buffer, HUGE_PAGE_SIZE, 32, "TLB L1 Access Times for 2MB Pages",num_accesses);
     munmap(huge_page_buffer, HUGE_PAGE_SIZE);
 
     return 0;
