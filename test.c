@@ -84,7 +84,8 @@ void access_and_time(char *pages, size_t page_size, size_t num_pages,int num_acc
 for(int i =0;i<num_accesses;i++){
     for (size_t j = 0; j < num_pages; j++) {
         char *addr = pages + j * page_size;
-        *addr = *addr + 1;
+        volatile char touch = *addr;
+        (void)touch;
         //printf("touched address *%p\n",(void *)addr);
         
     }
@@ -94,9 +95,9 @@ for(int i =0;i<num_accesses;i++){
 }
 
 void measure_tlb(char *memory, size_t page_size, int num_pages, const char *label,int num_accesses) {
-    uint64_t start_l1, end_l1,start_l2, end_l2;
+    uint64_t start_l1 = 0 , end_l1 = 0 ,start_l2 = 0, end_l2 = 0;
     uint64_t total_l1_time = 0 , total_l2_time = 0;
-    char *addr_l2 = (memory+(num_pages)*page_size);
+    volatile char *addr_l2 = (memory+(num_pages)*page_size);
 
     // Measure access time for L1 DTLB
     start_l1 = rdtsc();
@@ -106,13 +107,13 @@ void measure_tlb(char *memory, size_t page_size, int num_pages, const char *labe
 
     // Measure access time for L2 DTLB
     start_l2 = rdtsc();
-    *addr_l2 = *addr_l2 + 1;
+    volatile char l2_touch = *addr_l2;
     end_l2 = rdtsc();
     //printf("touched L2 %p\n",(void *)addr_l2);
+    (void)l2_touch; 
     total_l2_time = end_l2 - start_l2;
-
     printf("%s\n", label);
-    printf("Average access time for L1 DTLB: %" PRIu64 " cycles\n", total_l1_time / (num_pages * num_accesses));
+    printf("Average access time for L1 DTLB: %" PRIu64 " cycles\n", (total_l1_time/num_accesses)/num_pages);
     printf("Average access time for L2 DTLB: %" PRIu64 " cycles\n", total_l2_time );
     printf("\n");
 }
@@ -160,4 +161,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
