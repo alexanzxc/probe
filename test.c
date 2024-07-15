@@ -97,7 +97,7 @@ for(int i =0;i<num_accesses;i++){
 void measure_tlb(char *memory, size_t page_size, int num_pages, const char *label,int num_accesses) {
     uint64_t start_l1 = 0 , end_l1 = 0 ,start_l2 = 0, end_l2 = 0;
     uint64_t total_l1_time = 0 , total_l2_time = 0;
-    volatile char *addr_l2 = (memory+(num_pages)*page_size);
+    volatile char *addr_l2 = (memory+num_pages*page_size);
 
     // Measure access time for L1 DTLB
     start_l1 = rdtsc();
